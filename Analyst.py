@@ -15,17 +15,21 @@ import Preprocess
 class Ui_MainWindow(object):
     global data
     def file_open(self):
-        # 파일 읽기
+        # read file
         path = QtWidgets.QFileDialog.getOpenFileName()[0]
-        # 전처리
-        self.data = Preprocess.preprocess(path, True)
-        # 요약정보 출력
-
+        # if you select any file
+        if not path == '':
+            try: # if file is
+                # preprocessing
+                self.data = Preprocess.preprocess(path, True)
+            except UnboundLocalError:
+                self.data = Preprocess.preprocess(path, False)
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
         MainWindow.setMaximumSize(QtCore.QSize(800, 600))
+
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
@@ -99,9 +103,9 @@ class Ui_MainWindow(object):
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
         MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
+        #self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        #self.statusbar.setObjectName("statusbar")
+        #MainWindow.setStatusBar(self.statusbar)
         self.toolBar = QtWidgets.QToolBar(MainWindow)
         self.toolBar.setObjectName("toolBar")
         MainWindow.addToolBar(QtCore.Qt.TopToolBarArea, self.toolBar)
@@ -117,17 +121,16 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        # function setting
+        self.functionSetting(self)
 
-        # Function setting
-        self.pushButton.clicked.connect(self.on_click)
-        self.actionOpen.triggered.connect(self.file_open)
-
+    def functionSetting(self, Ui_MainWindow):
+        Ui_MainWindow.pushButton.clicked.connect(Ui_MainWindow.on_click)
+        Ui_MainWindow.actionOpen.triggered.connect(Ui_MainWindow.file_open)
 
     def on_click(self):
-        print('push')
         clurTech = self.comboBox.currentText()
         if clurTech == 'kmeans':
-            print('kmeans')
             attribute = ['초장(cm)', '경경(mm)', '잎길이(cm)', '잎 폭(cm)', '잎 수 (개)']
             case = 0
             ksample, silhouette_score = Clustering.clustering(self.data, attribute, 14, case, 50)

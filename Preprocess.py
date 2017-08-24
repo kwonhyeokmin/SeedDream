@@ -58,8 +58,9 @@ def preprocess(path, isConverted):
         df = pd.DataFrame(columns=columns, data=data)
         # replace a missing values
         df.ix[:, 0:8] = (df.ix[:, 0:8]).fillna(method='ffill') # replace with last value
-        df.ix[:, 4:8] = (df.ix[:, 0:8]).fillna(0)  # replace with zero
+        df.ix[:, 4:8] = (df.ix[:, 4:8]).fillna(0)  # replace with zero
         df.ix[:, 8:] = (df.ix[:, 8:]).fillna(0) # replace with zero
     else:
         df = pd.read_excel(path)
+        df = df.fillna(0)
     return df
