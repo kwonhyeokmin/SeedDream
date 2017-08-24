@@ -2,12 +2,19 @@
 # Created by: PyQt5 UI code generator 5.8.2
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from sklearn import preprocessing
 
 import Clustering
 import Preprocess
 import pandas as pd
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import numpy as np
+from sklearn.cluster import KMeans
+from matplotlib import pyplot as plt
+import pyclust
+from scipy.spatial.distance import cdist, pdist
+
+# class for show pandas.DataFrame data.
 class PandasModel(QtCore.QAbstractTableModel):
     def __init__(self, df = pd.DataFrame(), parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent=parent)
@@ -65,14 +72,49 @@ class PandasModel(QtCore.QAbstractTableModel):
         self._df.reset_index(inplace=True, drop=True)
         self.layoutChanged.emit()
 
+# kmedoid elbow graph
+def eblow_kmd(df, n):
+    centroids = []
+    for k in range(1, n):
+        kdata = df.copy()
+        kmd = pyclust.KMedoids(n_clusters=k)
+        kmd.fit(df.values)
+        centroids.append(kmd.centers_)
+        kdata['cluster'] = kmd.labels_
+    k_euclid = [cdist(df.values, cent) for cent in centroids]
+    dist = [np.min(ke, axis=1) for ke in k_euclid]
+    wcss = [sum(d ** 2) for d in dist]
+    tss = sum(pdist(df.values) ** 2) / df.values.shape[0]
+    bss = tss - wcss
+    return bss
+
+# kmeans elbow graph
+def eblow_k(df, n):
+    kMeansVar = []
+    for k in range(1, n) :
+        kdata = df.copy()
+        km = KMeans(n_clusters=k).fit(df.values)
+        kMeansVar.append(km)
+        kdata['cluster'] = km.labels_
+    centroids = [X.cluster_centers_ for X in kMeansVar]
+    k_euclid = [cdist(df.values, cent) for cent in centroids]
+    dist = [np.min(ke, axis=1) for ke in k_euclid]
+    wcss = [sum(d**2) for d in dist]
+    tss = sum(pdist(df.values)**2)/df.values.shape[0]
+    bss = tss - wcss
+    return bss
+
+# Main Window
 class Ui_MainWindow(object):
     global data
     def file_open(self):
         # read file
         path = QtWidgets.QFileDialog.getOpenFileName()[0] # file path
         # remove previous checkBox group
-        for i in reversed(range(self.checkBoxLayout.count())):
+        for i in range(self.checkBoxLayout.count()):
             self.checkBoxLayout.itemAt(i).widget().deleteLater()
+        for i in range(self.checkBoxLayout_2.count()):
+            self.checkBoxLayout_2.itemAt(i).widget().deleteLater()
 
         # if you select any file
         if not path == '':
@@ -91,10 +133,14 @@ class Ui_MainWindow(object):
                 self.checkBox.setText(each)
                 self.checkBoxLayout.addWidget(self.checkBox, *position)
 
+            positions = [(i, j) for i in range(int(len(self.data.columns) / 6) + 1) for j in range(6)]
+            for position, each in zip(positions, self.data.columns):
+                self.checkBox_2 = QtWidgets.QCheckBox(self.verticalLayoutWidget_3)
+                self.checkBox_2.setText(each)
+                self.checkBoxLayout_2.addWidget(self.checkBox_2, *position)
+
             model = PandasModel(self.data)
             self.tableView.setModel(model)
-                #except:
-                    #print('This file does not support. Please select vaild file.')
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -144,12 +190,22 @@ class Ui_MainWindow(object):
         self.graphLayout.setObjectName("graphLayout")
         self.graphLayoutWidget.setGeometry(QtCore.QRect(0, 10, 341, 40))
 
+        # plot
+        self.fig = plt.Figure()
+        self.canvas = FigureCanvas(self.fig)
+        self.plotLayoutWidget = QtWidgets.QWidget(self.groupBox)
+        self.plotLayoutWidget.setMaximumHeight(260)
+        self.plotLayout = QtWidgets.QVBoxLayout(self.plotLayoutWidget)
+        self.plotLayout.addWidget(self.canvas)
+        self.plotLayoutWidget.setGeometry(QtCore.QRect(1, 200, 370, 300))
+
         #clustering method comboBox
-        self.clusterComboBox = QtWidgets.QComboBox(self.graphLayoutWidget)
-        self.clusterComboBox.setObjectName("comboBox_2")
-        self.clusterComboBox.addItem("")
-        self.clusterComboBox.addItem("")
-        self.graphLayout.addWidget(self.clusterComboBox)
+        self.comboBox = QtWidgets.QComboBox(self.graphLayoutWidget)
+        self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.graphLayout.addWidget(self.comboBox)
 
         self.pushButton_2 = QtWidgets.QPushButton(self.graphLayoutWidget)
         self.pushButton_2.setObjectName("pushButton_2")
@@ -183,25 +239,33 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.setObjectName("verticalLayout_7")
         self.widget = QtWidgets.QWidget(self.verticalLayoutWidget_2)
         self.widget.setObjectName("widget")
-        self.horizontalLayoutWidget_2 = QtWidgets.QWidget(self.widget)
+
+        # checkbox
+        self.groupBox_3 = QtWidgets.QGroupBox(self.Clustering)
+        self.groupBox_3.setObjectName("groupBox_3")
+        self.groupBox_3.setGeometry(QtCore.QRect(10, 0, 710, 460))
+        self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.groupBox_3)
+
+        self.horizontalLayoutWidget_2 = QtWidgets.QWidget(self.groupBox_3)
         self.horizontalLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 224, 32))
         self.horizontalLayoutWidget_2.setObjectName("horizontalLayoutWidget_2")
         self.horizontalLayoutWidget_2.setMinimumWidth(300)
+
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_2)
         self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
 
-        self.comboBox = QtWidgets.QComboBox(self.horizontalLayoutWidget_2)
-        self.comboBox.setObjectName("comboBox")
-        self.comboBox.addItem("")
-        self.comboBox.addItem("")
+        self.clusterComboBox = QtWidgets.QComboBox(self.horizontalLayoutWidget_2)
+        self.clusterComboBox.setObjectName("clusterComboBox")
+        self.clusterComboBox.addItem("")
+        self.clusterComboBox.addItem("")
 
-        self.horizontalLayout_2.addWidget(self.comboBox)
-        self.pushButton = QtWidgets.QPushButton(self.horizontalLayoutWidget_2)
+        self.horizontalLayout_2.addWidget(self.clusterComboBox)
+        self.pushButton = QtWidgets.QPushButton(self.groupBox_3)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout_2.addWidget(self.pushButton)
 
-        self.label = QtWidgets.QLabel()
+        self.label = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
         self.label.setText("k value:")
         self.horizontalLayout_2.addWidget(self.label)
 
@@ -210,6 +274,12 @@ class Ui_MainWindow(object):
         self.kvalue.setMaximumWidth(30)
         self.kvalue.setText("4")
         self.horizontalLayout_2.addWidget(self.kvalue)
+
+        self.checkBoxLayout_2 = QtWidgets.QGridLayout(self.verticalLayoutWidget_3)
+        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(10, 25, 400, 800))
+        self.checkBoxLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.checkBoxLayout_2.setObjectName("checkBoxLayout_2")
+        self.verticalLayoutWidget_3.setMaximumHeight(180)
 
         self.verticalLayout_7.addWidget(self.widget)
         self.tabWidget.addTab(self.Clustering, "")
@@ -241,30 +311,81 @@ class Ui_MainWindow(object):
     def functionSetting(self, Ui_MainWindow):
         Ui_MainWindow.pushButton.clicked.connect(Ui_MainWindow.on_click)
         Ui_MainWindow.actionOpen.triggered.connect(Ui_MainWindow.file_open)
+        Ui_MainWindow.pushButton_2.clicked.connect(Ui_MainWindow.draw_click)
+
+    def draw_click(self):
+        try :
+            df = self.data
+            self.fig.clf()
+            ax = self.fig.add_subplot(111)
+            try:
+                min_max_scaler = preprocessing.MinMaxScaler()
+                if self.comboBox.currentText() == 'histogram':
+                    for i in range(self.checkBoxLayout.count()):
+                        if self.checkBoxLayout.itemAt(i).widget().isChecked():
+                            attribute = self.checkBoxLayout.itemAt(i).widget().text()
+                            ax.hist(self.data[str(attribute)], normed=1)
+                elif self.comboBox.currentText() == 'scatter plot':
+                    attribute = []
+                    for i in range(self.checkBoxLayout.count()):
+                        if self.checkBoxLayout.itemAt(i).widget().isChecked():
+                            attribute.append(self.checkBoxLayout.itemAt(i).widget().text())
+                    if len(attribute)==2:
+                        ax.scatter(df[attribute[0]], df[attribute[1]], alpha=0.5, s=2)
+                    else:
+                        print('Please select two attribute.')
+                elif self.comboBox.currentText() == 'elbow graph':
+                    attribute = []
+                    for i in range(self.checkBoxLayout.count()):
+                        if self.checkBoxLayout.itemAt(i).widget().isChecked():
+                            attribute.append(self.checkBoxLayout.itemAt(i).widget().text())
+
+                    kdata = df[[x for x in attribute]]  # define attribute of clustering
+                    x = kdata.values
+                    x_scaled = min_max_scaler.fit_transform(x)
+                    kdata = pd.DataFrame(x_scaled)
+
+                    bss = eblow_k(kdata, 30)
+                    ax.plot(bss)
+
+                ax.grid()
+                self.canvas.draw()
+
+            except TypeError:
+                print('len() of unsized object')
+            except ValueError:
+                print('Select another attribute.')
+        except AttributeError:
+            print('Please input data file.')
 
     def on_click(self):
         try:
-            clurTech = self.comboBox.currentText()
+            clurTech = self.clusterComboBox.currentText()
             if clurTech == 'kmeans':
-                attribute = ['초장(cm)', '경경(mm)', '잎길이(cm)', '잎 폭(cm)', '잎 수 (개)']
+                attribute = []
+                for i in range(self.checkBoxLayout.count()):
+                    if self.checkBoxLayout_2.itemAt(i).widget().isChecked():
+                        attribute.append(self.checkBoxLayout_2.itemAt(i).widget().text())
                 case = 0
-                kvalue = self.kvalue.toPlainText()
+                kvalue = self.kvalue.toPlainText() # k value
                 ksample, silhouette_score = Clustering.clustering(self.data, attribute, int(kvalue), case, 50)
-
+                print(silhouette_score)
             elif clurTech == 'kmedoid':
                 print('kmedoid')
-        except AttributeError:
+        except AttributeError: # if there is no data for clustering
             print('Please input data.')
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.groupBox.setTitle(_translate("MainWindow", "Graph"))
         self.groupBox_2.setTitle(_translate("MainWindow", "Data"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Summary), _translate("MainWindow", "Summary"))
-        self.comboBox.setItemText(0, _translate("MainWindow", "kmeans"))
-        self.comboBox.setItemText(1, _translate("MainWindow", "kmedoid"))
-        self.clusterComboBox.setItemText(0, _translate("MainWindow", "histogram"))
-        self.clusterComboBox.setItemText(1, _translate("MainWindow", "scatter plot"))
+        self.comboBox.setItemText(0, _translate("MainWindow", "histogram"))
+        self.comboBox.setItemText(1, _translate("MainWindow", "scatter plot"))
+        self.comboBox.setItemText(2, _translate("MainWindow", "elbow graph"))
+        self.clusterComboBox.setItemText(0, _translate("MainWindow", "kmeans"))
+        self.clusterComboBox.setItemText(1, _translate("MainWindow", "kmedoid"))
 
         self.pushButton.setText(_translate("MainWindow", "Clustering"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Clustering), _translate("MainWindow", "Clurstering"))
