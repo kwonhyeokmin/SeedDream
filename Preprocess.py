@@ -1,6 +1,8 @@
 import openpyxl as ol
 import pandas as pd
 import re
+
+# convert string to data
 def convertDate(date):
     date = re.split('[. ]', date)
     date[-1] = date[-1].replace('(','')
@@ -25,6 +27,7 @@ def isContain(row, value):
     return False
 
 def preprocess(path, isConverted):
+    # if file is type of '생육조사자료'
     if isConverted:
         data = []
         date = [None for x in range(4)]

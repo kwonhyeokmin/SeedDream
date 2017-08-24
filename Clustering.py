@@ -17,9 +17,9 @@ def clustering(data, attribute, k, case, trial):
     elif case==1: # kmedoid clustering
         kmd = kmedoid(kdata, k, trial)
         data['cluster'] = kmd.labels_
-
-    return data, metrics.silhouette_score(x, km.labels_, metric='euclidean')
-
+    silhouette_score = metrics.silhouette_score(x, km.labels_, metric='euclidean')
+    print(silhouette_score, k)
+    return data, silhouette_score
 def kmeans(kdata, n_clusters):
     k = KMeans(n_clusters=n_clusters, random_state=33).fit(kdata)
     return k
