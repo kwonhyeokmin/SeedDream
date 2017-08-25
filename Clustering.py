@@ -11,20 +11,22 @@ def clustering(data, attribute, k, case, trial):
     kdata = pd.DataFrame(x_scaled)
 
     if case==0: # kmeans clustering
-        km = kmeans(kdata, k)
-        data['cluster'] = km.labels_
-
+        kmLabel = kmeans(kdata, k).labels_
+        data['cluster'] = kmLabel
+        silhouette_score = metrics.silhouette_score(x, kmLabel, metric='euclidean')
     elif case==1: # kmedoid clustering
-        kmd = kmedoid(kdata, k, trial)
-        data['cluster'] = kmd.labels_
-    silhouette_score = metrics.silhouette_score(x, km.labels_, metric='euclidean')
-    print(silhouette_score, k)
+        kmdLabel = kmedoid(kdata, k, trial)
+        data['cluster'] = kmdLabel
+        silhouette_score = metrics.silhouette_score(x, kmdLabel, metric='euclidean')
+
     return data, silhouette_score
+
 def kmeans(kdata, n_clusters):
     k = KMeans(n_clusters=n_clusters, random_state=33).fit(kdata)
     return k
 
 def kmedoid(kdata, n_clusters, n_trial):
-    k = pyclust.KMedoids(n_clusters=n_clusters, n_trials=n_trial)
-    k.fit(kdata.values)
-    return k
+    kmd = pyclust.KMedoids(n_clusters=n_clusters, n_trials=n_trial)
+    kmd.fit(kdata.values)
+
+    return kmd.labels_
