@@ -275,11 +275,18 @@ class Ui_MainWindow(object):
         self.kvalue.setText("4")
         self.horizontalLayout_2.addWidget(self.kvalue)
 
+        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(10, 25, 680, 100))
         self.checkBoxLayout_2 = QtWidgets.QGridLayout(self.verticalLayoutWidget_3)
-        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(10, 25, 400, 800))
         self.checkBoxLayout_2.setContentsMargins(0, 0, 0, 0)
         self.checkBoxLayout_2.setObjectName("checkBoxLayout_2")
-        self.verticalLayoutWidget_3.setMaximumHeight(180)
+
+        self.horizontalLayoutWidget_5 = QtWidgets.QWidget(self.groupBox_3)
+        self.tableView_2 = QtWidgets.QTableView(self.horizontalLayoutWidget_5)
+        self.horizontalLayout_6 = QtWidgets.QVBoxLayout(self.horizontalLayoutWidget_5)
+        self.horizontalLayout_6.addWidget(self.tableView_2)
+        self.horizontalLayoutWidget_5.setGeometry(QtCore.QRect(0, 120, 710, 300))
+        self.label_2 = QtWidgets.QLabel(self.horizontalLayoutWidget_5)
+        self.horizontalLayout_6.addWidget(self.label_2)
 
         self.verticalLayout_7.addWidget(self.widget)
         self.tabWidget.addTab(self.Clustering, "")
@@ -331,7 +338,7 @@ class Ui_MainWindow(object):
                         if self.checkBoxLayout.itemAt(i).widget().isChecked():
                             attribute.append(self.checkBoxLayout.itemAt(i).widget().text())
                     if len(attribute)==2:
-                        ax.scatter(df[attribute[0]], df[attribute[1]], alpha=0.5, s=2)
+                        ax.scatter(df[attribute[0]], df[attribute[1]], alpha=0.7, s=5)
                     else:
                         print('Please select two attribute.')
                 elif self.comboBox.currentText() == 'elbow graph':
@@ -361,17 +368,21 @@ class Ui_MainWindow(object):
     def on_click(self):
         try:
             clurTech = self.clusterComboBox.currentText()
+            attribute = []
+            for i in range(self.checkBoxLayout.count()):
+                if self.checkBoxLayout_2.itemAt(i).widget().isChecked():
+                    attribute.append(self.checkBoxLayout_2.itemAt(i).widget().text())
+
             if clurTech == 'kmeans':
-                attribute = []
-                for i in range(self.checkBoxLayout.count()):
-                    if self.checkBoxLayout_2.itemAt(i).widget().isChecked():
-                        attribute.append(self.checkBoxLayout_2.itemAt(i).widget().text())
                 case = 0
-                kvalue = self.kvalue.toPlainText() # k value
-                ksample, silhouette_score = Clustering.clustering(self.data, attribute, int(kvalue), case, 50)
-                print(silhouette_score)
             elif clurTech == 'kmedoid':
-                print('kmedoid')
+                case = 1
+            kvalue = self.kvalue.toPlainText()  # k value
+            ksample, silhouette_score = Clustering.clustering(self.data, attribute, int(kvalue), case, 50)
+            self.label_2.setText('silhouette score :' + str(silhouette_score))
+
+            model = PandasModel(ksample)
+            self.tableView_2.setModel(model)
         except AttributeError: # if there is no data for clustering
             print('Please input data.')
 
