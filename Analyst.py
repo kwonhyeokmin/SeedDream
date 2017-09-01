@@ -183,6 +183,7 @@ class Ui_MainWindow(object):
         self.comboBox.addItem("")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
+        self.comboBox.addItem("")
         self.optionGraphLayout.addWidget(self.comboBox)
         # draw button
         self.drawButton = QtWidgets.QPushButton(self.optionGraphWidget)
@@ -316,9 +317,14 @@ class Ui_MainWindow(object):
                         if self.checkBoxLayout.itemAt(i).widget().isChecked():
                             attribute.append(self.checkBoxLayout.itemAt(i).widget().text())
                     if len(attribute)==2: # check attribute
-                        ax.scatter(df[attribute[0]], df[attribute[1]], alpha=0.7, s=5)
-                        pearson = np.corrcoef(df[attribute[0]], df[attribute[1]])
+                        X = df[attribute[0]]
+                        y = df[attribute[1]]
+                        std = min_max_scaler.fit_transform(df[[attribute[0], attribute[1]]])
+                        #ax.scatter(std[0], std[1], alpha=0.7, s=5)
+                        ax.scatter(X, y, alpha=0.7, s=5)
 
+                        pearson = np.corrcoef(df[attribute[0]], df[attribute[1]])
+                        print(pearson)
                     else:
                         print('Please select two attribute.')
                 elif self.comboBox.currentText() == 'elbow graph': # elbow graph
@@ -333,8 +339,14 @@ class Ui_MainWindow(object):
                     bss = eblow_k(kdata, 30)
                     ax.xaxis.set_ticks(np.arange(1, 31, 3))
                     ax.plot(bss)
+                elif self.comboBox.currentText() == 'plot':
+                    for i in range(self.checkBoxLayout.count()):
+                        if self.checkBoxLayout.itemAt(i).widget().isChecked():
+                            attribute = self.checkBoxLayout.itemAt(i).widget().text()
+                            ax.plot(self.data[str(attribute)])
                 ax.grid()
                 self.canvas.draw()
+
             except TypeError:
                 print('len() of unsized object')
             except ValueError:
@@ -374,6 +386,7 @@ class Ui_MainWindow(object):
         self.comboBox.setItemText(0, _translate("MainWindow", "histogram"))
         self.comboBox.setItemText(1, _translate("MainWindow", "scatter plot"))
         self.comboBox.setItemText(2, _translate("MainWindow", "elbow graph"))
+        self.comboBox.setItemText(3, _translate("MainWindow", "plot"))
         self.clusterComboBox.setItemText(0, _translate("MainWindow", "kmeans"))
         self.clusterComboBox.setItemText(1, _translate("MainWindow", "kmedoid"))
 
